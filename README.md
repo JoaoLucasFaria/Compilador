@@ -6,9 +6,10 @@ O arquivo inclui um Makefile (digitar "make" no terminal) para a compilação do
 Exemplo de código e execução:
 
 for.c:
-#include <stdio.h>
 
-int main(){
+    #include <stdio.h>
+
+    int main(){
 
     int quantidade;
     printf("Escolha uma quantidade\n\n");
@@ -19,7 +20,7 @@ int main(){
     }
     
 
-}
+    }
 
 
 Execução:
