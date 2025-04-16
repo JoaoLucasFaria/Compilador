@@ -76,5 +76,5 @@ l10.c50 DELIMITADOR: ;<br />
 l11.c5 DELIMITADOR: }<br />
 l14.c1 DELIMITADOR: }<br />
 
-Feito por: João Lucas de Vilas Bôas Faria
+Feito por: João Lucas de Vilas Bôas Faria<br />
 Data: 10/04/25
