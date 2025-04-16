@@ -76,5 +76,9 @@ l10.c50 DELIMITADOR: ;<br />
 l11.c5 DELIMITADOR: }<br />
 l14.c1 DELIMITADOR: }<br />
 
+onde lX.cY são, respectivamente, a linha e a coluna onde o analisador encontrou uma ocorrencia<br />
+
+
+
 Feito por: João Lucas de Vilas Bôas Faria<br />
 Data: 10/04/25
