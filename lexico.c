@@ -4,176 +4,132 @@
 #include <ctype.h>
 #include "lexico.h"
 
-#define MAX_TOKEN 100
+#define MAX_TOKEN 1000
 
-// Lista de palavras-chave da linguagem
+Token tokens[MAX_TOKEN];
+int num_tokens = 0;
+
 const char *palavras_chave[] = {
-    "int", "float", "if", "else", "while", "for", "return", "char", "double", "void"};
+    "int", "float", "char", "void", "if", "else", "while", "for", "return"};
 
-// Verifica se uma string é palavra-chave
 int eh_palavra_chave(const char *str) {
-    for (int i = 0; i < sizeof(palavras_chave) / sizeof(palavras_chave[0]); i++) {
-        if (strcmp(str, palavras_chave[i]) == 0)
-            return 1;
-    }
+    for (int i = 0; i < sizeof(palavras_chave) / sizeof(char *); i++)
+        if (strcmp(str, palavras_chave[i]) == 0) return 1;
     return 0;
 }
 
-// Verifica se um caractere é delimitador
-int eh_delimitador(char c) {
-    return c == ' ' || c == '+' || c == '-' || c == '*' || c == '/' ||
-           c == ',' || c == ';' || c == '%' || c == '>' || c == '<' ||
-           c == '=' || c == '(' || c == ')' || c == '[' || c == ']' ||
-           c == '{' || c == '}';
-}
-
-// Verifica se é um operador simples
-int eh_operador(char c) {
-    return c == '+' || c == '-' || c == '*' || c == '/' || c == '>' ||
-           c == '<' || c == '=' || c == '&' || c == '|';
-}
-
-// Verifica se é um operador duplo (como ==, <=, ++)
-int eh_operador_duplo(char a, char b) {
-    return (a == '=' && b == '=') || (a == '<' && b == '=') ||
-           (a == '>' && b == '=') || (a == '+' && b == '+') ||
-           (a == '-' && b == '-') || (a == '&' && b == '&') ||
-           (a == '|' && b == '|');
+void adicionar_token(const char *tipo, const char *valor, int linha, int coluna) {
+    if (num_tokens >= MAX_TOKEN) return;
+    strcpy(tokens[num_tokens].tipo, tipo);
+    strcpy(tokens[num_tokens].valor, valor);
+    tokens[num_tokens].linha = linha;
+    tokens[num_tokens].coluna = coluna;
+    num_tokens++;
 }
 
 void analisar_lexico(const char *codigo) {
     int i = 0, linha = 1, coluna = 1;
-    int parenteses = 0, colchetes = 0, chaves = 0;
-    int aspas_abertas = 0;
-    int linha_paren = -1, col_paren = -1;
-    int linha_colchete = -1, col_colchete = -1;
-    int linha_chave = -1, col_chave = -1;
-    int linha_aspas = -1, col_aspas = -1;
-
     while (codigo[i] != '\0') {
         if (isspace(codigo[i])) {
-            if (codigo[i] == '\n') {
-                linha++;
-                coluna = 1;
-            } else {
-                coluna++;
-            }
+            if (codigo[i] == '\n') { linha++; coluna = 1; }
+            else coluna++;
             i++;
             continue;
         }
 
-        if (codigo[i] == '#') {
-            char buffer[MAX_TOKEN];
-            int j = 0;
-            while (codigo[i] != '\n' && codigo[i] != '\0') {
-                buffer[j++] = codigo[i++];
-            }
-            buffer[j] = '\0';
-            printf("l%d.c%d DIRETIVA: %s\n", linha, coluna, buffer);
-            coluna += strlen(buffer);
-            continue;
-        }
-
-        if (codigo[i] == '"') {
-            char buffer[MAX_TOKEN];
-            int j = 0;
-            linha_aspas = linha;
-            col_aspas = coluna;
-            buffer[j++] = codigo[i++];
-            coluna++;
-            aspas_abertas++;
-
-            while (codigo[i] != '"' && codigo[i] != '\0') {
-                if (codigo[i] == '\n') {
-                    linha++;
-                    coluna = 1;
-                } else {
-                    coluna++;
-                }
-                buffer[j++] = codigo[i++];
-            }
-
-            if (codigo[i] == '"') {
-                buffer[j++] = codigo[i++];
-                coluna++;
-                aspas_abertas--;
-            }
-
-            buffer[j] = '\0';
-            printf("l%d.c%d STRING: %s\n", linha_aspas, col_aspas, buffer);
+        if (codigo[i] == '/' && codigo[i + 1] == '/') {
+            while (codigo[i] != '\n' && codigo[i] != '\0') i++;
             continue;
         }
 
         if (isalpha(codigo[i]) || codigo[i] == '_') {
-            char buffer[MAX_TOKEN];
+            char buffer[100];
             int j = 0;
-            while (isalnum(codigo[i]) || codigo[i] == '_') {
-                buffer[j++] = codigo[i++];
-                coluna++;
-            }
+            while (isalnum(codigo[i]) || codigo[i] == '_') buffer[j++] = codigo[i++];
             buffer[j] = '\0';
-            if (eh_palavra_chave(buffer)) {
-                printf("l%d.c%d PALAVRA-CHAVE: %s\n", linha, coluna - j, buffer);
-            } else {
-                printf("l%d.c%d IDENTIFICADOR: %s\n", linha, coluna - j, buffer);
-            }
+            adicionar_token(eh_palavra_chave(buffer) ? "PALAVRA-CHAVE" : "IDENTIFICADOR", buffer, linha, coluna);
+            coluna += j;
             continue;
         }
 
         if (isdigit(codigo[i])) {
-            char buffer[MAX_TOKEN];
+            char buffer[100];
             int j = 0;
-            while (isdigit(codigo[i])) {
+            while (isdigit(codigo[i])) buffer[j++] = codigo[i++];
+            if (codigo[i] == '.') {
                 buffer[j++] = codigo[i++];
-                coluna++;
+                while (isdigit(codigo[i])) buffer[j++] = codigo[i++];
+                buffer[j] = '\0';
+                adicionar_token("FLOAT", buffer, linha, coluna);
+            } else {
+                buffer[j] = '\0';
+                adicionar_token("NÚMERO", buffer, linha, coluna);
             }
-            buffer[j] = '\0';
-            printf("l%d.c%d NÚMERO: %s\n", linha, coluna - j, buffer);
+            coluna += j;
             continue;
         }
 
-        if (eh_operador(codigo[i]) && eh_operador_duplo(codigo[i], codigo[i + 1])) {
-            printf("l%d.c%d OPERADOR: %c%c\n", linha, coluna, codigo[i], codigo[i + 1]);
+        if (codigo[i] == '\'' && isprint(codigo[i + 1]) && codigo[i + 2] == '\'') {
+            char buffer[4] = {codigo[i], codigo[i + 1], codigo[i + 2], '\0'};
+            adicionar_token("CHAR", buffer, linha, coluna);
+            i += 3;
+            coluna += 3;
+            continue;
+        }
+
+        if (codigo[i] == '"') {
+            char buffer[100];
+            int j = 0;
+            buffer[j++] = codigo[i++];
+            while (codigo[i] != '"' && codigo[i] != '\0') buffer[j++] = codigo[i++];
+            if (codigo[i] == '"') buffer[j++] = codigo[i++];
+            buffer[j] = '\0';
+            adicionar_token("STRING", buffer, linha, coluna);
+            coluna += j;
+            continue;
+        }
+
+        // operadores compostos
+        if ((codigo[i] == '=' && codigo[i + 1] == '=') ||
+            (codigo[i] == '!' && codigo[i + 1] == '=') ||
+            (codigo[i] == '<' && codigo[i + 1] == '=') ||
+            (codigo[i] == '>' && codigo[i + 1] == '=') ||
+            (codigo[i] == '&' && codigo[i + 1] == '&') ||
+            (codigo[i] == '|' && codigo[i + 1] == '|')) {
+            char op[3] = {codigo[i], codigo[i + 1], '\0'};
+            adicionar_token("OPERADOR", op, linha, coluna);
             i += 2;
             coluna += 2;
             continue;
         }
 
-        if (eh_operador(codigo[i])) {
-            printf("l%d.c%d OPERADOR: %c\n", linha, coluna, codigo[i]);
+        // operadores simples
+        if (strchr("+-*/=<>!&|", codigo[i])) {
+            char op[2] = {codigo[i], '\0'};
+            adicionar_token("OPERADOR", op, linha, coluna);
             i++;
             coluna++;
             continue;
         }
 
-        if (eh_delimitador(codigo[i])) {
-            char c = codigo[i];
-            printf("l%d.c%d DELIMITADOR: %c\n", linha, coluna, c);
-
-            if (c == '(') { parenteses++; linha_paren = linha; col_paren = coluna; }
-            if (c == ')') parenteses--;
-            if (c == '[') { colchetes++; linha_colchete = linha; col_colchete = coluna; }
-            if (c == ']') colchetes--;
-            if (c == '{') { chaves++; linha_chave = linha; col_chave = coluna; }
-            if (c == '}') chaves--;
-
+        // delimitadores
+        if (strchr("(){}[];,", codigo[i])) {
+            char d[2] = {codigo[i], '\0'};
+            adicionar_token("DELIMITADOR", d, linha, coluna);
             i++;
             coluna++;
             continue;
         }
 
-        printf("l%d.c%d ERRO LÉXICO: caractere inválido '%c'\n", linha, coluna, codigo[i]);
+        // caractere desconhecido
+        char erro[2] = {codigo[i], '\0'};
+        adicionar_token("ERRO", erro, linha, coluna);
         i++;
         coluna++;
     }
 
-    // Verificações finais
-    if (aspas_abertas > 0)
-        printf("ERRO: %d string(s) com aspas sem fechamento correspondente em l%d.c%d.\n", aspas_abertas, linha_aspas, col_aspas);
-    if (parenteses > 0)
-        printf("ERRO: %d parêntese(s) '(' sem fechamento correspondente em l%d.c%d.\n", parenteses, linha_paren, col_paren);
-    if (colchetes > 0)
-        printf("ERRO: %d colchete(s) '[' sem fechamento correspondente em l%d.c%d.\n", colchetes, linha_colchete, col_colchete);
-    if (chaves > 0)
-        printf("ERRO: %d chave(s) '{' sem fechamento correspondente em l%d.c%d.\n", chaves, linha_chave, col_chave);
+    // imprimir tokens
+    for (int t = 0; t < num_tokens; t++) {
+        printf("l%d.c%d %s: %s\n", tokens[t].linha, tokens[t].coluna, tokens[t].tipo, tokens[t].valor);
+    }
 }

@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-I.
-DEPS = lexico.h
-OBJ = main.o lexico.o
+DEPS = lexico.h sintatico.h
+OBJ = main.o lexico.o sintatico.o
 EXEC = main
 
 %.o: %.c $(DEPS)
