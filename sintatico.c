@@ -174,12 +174,27 @@ NoSintatico *parse_bloco()
 NoSintatico *parse_expressao()
 {
     NoSintatico *no = criar_no("EXPR", "");
-    while (pos < num_tokens &&
-           !(token_atual_e("DELIMITADOR", ";") || token_atual_e("DELIMITADOR", ")")))
+    int parenteses_abertos = 0;
+
+    while (pos < num_tokens)
     {
+        if (token_atual_e("DELIMITADOR", "("))
+            parenteses_abertos++;
+
+        if (token_atual_e("DELIMITADOR", ")"))
+        {
+            if (parenteses_abertos == 0)
+                break;
+            parenteses_abertos--;
+        }
+
+        if (parenteses_abertos == 0 && token_atual_e("DELIMITADOR", ";"))
+            break;
+
         adicionar_filho(no, criar_no(tokens[pos].tipo, tokens[pos].valor));
         consumir_token();
     }
+
     return no;
 }
 
@@ -237,9 +252,18 @@ void analisar_sintatico()
 {
     pos = 0;
     NoSintatico *raiz = criar_no("Programa", "");
+
     while (pos < num_tokens)
     {
+
+        if (strcmp(tokens[pos].tipo, "DIRETIVA") == 0)
+        {
+            pos++;
+            continue;
+        }
+
         adicionar_filho(raiz, parse_funcao());
     }
+
     imprimir_arvore(raiz, 0);
 }
