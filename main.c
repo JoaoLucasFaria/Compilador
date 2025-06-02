@@ -3,60 +3,33 @@
 #include "lexico.h"
 #include "sintatico.h"
 
-int main(int argc, char *argv[])
-{
-    if (argc != 2)
-    {
-        printf("Uso: %s <arquivo.c>\n", argv[0]);
+int main(int argc, char *argv[]) {
+    if (argc < 2) {
+        printf("Uso: %s <arquivo_fonte.c>\n", argv[0]);
         return 1;
     }
 
-    FILE *arquivo = fopen(argv[1], "r");
-    if (!arquivo)
-    {
-        perror("Erro ao abrir o arquivo");
-        return 1;
-    }
+    char *arquivo = argv[1];
+    analisar_lexico(arquivo);
 
-    fseek(arquivo, 0, SEEK_END);
-    long tamanho = ftell(arquivo);
-    fseek(arquivo, 0, SEEK_SET);
-
-    char *codigo = malloc(tamanho + 1);
-    fread(codigo, 1, tamanho, arquivo);
-    codigo[tamanho] = '\0';
-    fclose(arquivo);
-
-    int choice = 0;
+    int opcao;
     printf("Imprimir:\n");
     printf("1 - Lexico\n");
     printf("2 - Sintatico\n");
     printf("3 - Ambos\n");
-    scanf("%d", &choice);
+    scanf("%d", &opcao);
 
-    if (choice == 1)
-    {
-        printf("== Tokens encontrados no arquivo '%s' ==\n\n", argv[1]);
-        analisar_lexico(codigo);
+    if (opcao == 1 || opcao == 3) {
+        printf("== Tokens encontrados no arquivo '%s' ==\n\n", arquivo);
+        for (int i = 0; i < num_tokens; i++) {
+            printf("l%d.c%d %s: %s\n", tokens[i].linha, tokens[i].coluna, tokens[i].tipo, tokens[i].valor);
+        }
     }
-    else if (choice == 2)
-    {
-        analisar_lexico(codigo);
-        printf("\n== Árvore Sintática ==\n\n");
+
+    if (opcao == 2 || opcao == 3) {
+        printf("\n== \u00c1rvore Sint\u00e1tica ==\n\n");
         analisar_sintatico();
     }
-    else if (choice == 3)
-    {
-        printf("== Tokens encontrados no arquivo '%s' ==\n\n", argv[1]);
-        analisar_lexico(codigo);
-        printf("\n== Árvore Sintática ==\n\n");
-        analisar_sintatico();
-    }
-    else
-    {
-        free(codigo);
-        exit(0);
-    }
-    free(codigo);
+
     return 0;
 }

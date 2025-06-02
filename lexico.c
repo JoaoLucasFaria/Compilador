@@ -4,132 +4,98 @@
 #include <ctype.h>
 #include "lexico.h"
 
-#define MAX_TOKEN 1000
-
-Token tokens[MAX_TOKEN];
+Token tokens[1000];
 int num_tokens = 0;
 
-const char *palavras_chave[] = {
-    "int", "float", "char", "void", "if", "else", "while", "for", "return"};
+void adicionar_token(int linha, int coluna, const char *tipo, const char *valor) {
+    Token t;
+    t.linha = linha;
+    t.coluna = coluna;
+    strcpy(t.tipo, tipo);
+    strcpy(t.valor, valor);
+    tokens[num_tokens++] = t;
+}
 
 int eh_palavra_chave(const char *str) {
-    for (int i = 0; i < sizeof(palavras_chave) / sizeof(char *); i++)
-        if (strcmp(str, palavras_chave[i]) == 0) return 1;
+    const char *palavras[] = {"int", "float", "char", "if", "else", "while", "for", "return"};
+    for (int i = 0; i < 8; i++) {
+        if (strcmp(str, palavras[i]) == 0) return 1;
+    }
     return 0;
 }
 
-void adicionar_token(const char *tipo, const char *valor, int linha, int coluna) {
-    if (num_tokens >= MAX_TOKEN) return;
-    strcpy(tokens[num_tokens].tipo, tipo);
-    strcpy(tokens[num_tokens].valor, valor);
-    tokens[num_tokens].linha = linha;
-    tokens[num_tokens].coluna = coluna;
-    num_tokens++;
-}
+void analisar_lexico(const char *nome_arquivo) {
+    FILE *arquivo = fopen(nome_arquivo, "r");
+    if (!arquivo) {
+        perror("Erro ao abrir arquivo");
+        exit(1);
+    }
 
-void analisar_lexico(const char *codigo) {
-    int i = 0, linha = 1, coluna = 1;
-    while (codigo[i] != '\0') {
-        if (isspace(codigo[i])) {
-            if (codigo[i] == '\n') { linha++; coluna = 1; }
+    int c, linha = 1, coluna = 1;
+    while ((c = fgetc(arquivo)) != EOF) {
+        if (isspace(c)) {
+            if (c == '\n') { linha++; coluna = 1; }
             else coluna++;
-            i++;
             continue;
         }
 
-        if (codigo[i] == '/' && codigo[i + 1] == '/') {
-            while (codigo[i] != '\n' && codigo[i] != '\0') i++;
-            continue;
-        }
-
-        if (isalpha(codigo[i]) || codigo[i] == '_') {
+        if (isalpha(c) || c == '_') {
             char buffer[100];
-            int j = 0;
-            while (isalnum(codigo[i]) || codigo[i] == '_') buffer[j++] = codigo[i++];
-            buffer[j] = '\0';
-            adicionar_token(eh_palavra_chave(buffer) ? "PALAVRA-CHAVE" : "IDENTIFICADOR", buffer, linha, coluna);
-            coluna += j;
-            continue;
-        }
+            int i = 0, start_col = coluna;
+            do {
+                buffer[i++] = c;
+                c = fgetc(arquivo); coluna++;
+            } while (isalnum(c) || c == '_');
+            buffer[i] = '\0';
+            ungetc(c, arquivo); coluna--;
 
-        if (isdigit(codigo[i])) {
+            if (eh_palavra_chave(buffer))
+                adicionar_token(linha, start_col, "PALAVRA-CHAVE", buffer);
+            else
+                adicionar_token(linha, start_col, "IDENTIFICADOR", buffer);
+        }
+        else if (isdigit(c)) {
             char buffer[100];
-            int j = 0;
-            while (isdigit(codigo[i])) buffer[j++] = codigo[i++];
-            if (codigo[i] == '.') {
-                buffer[j++] = codigo[i++];
-                while (isdigit(codigo[i])) buffer[j++] = codigo[i++];
-                buffer[j] = '\0';
-                adicionar_token("FLOAT", buffer, linha, coluna);
-            } else {
-                buffer[j] = '\0';
-                adicionar_token("NÚMERO", buffer, linha, coluna);
+            int i = 0, start_col = coluna;
+            do {
+                buffer[i++] = c;
+                c = fgetc(arquivo); coluna++;
+            } while (isdigit(c));
+            buffer[i] = '\0';
+            ungetc(c, arquivo); coluna--;
+            adicionar_token(linha, start_col, "NÚMERO", buffer);
+        }
+        else if (c == '"') {
+            char buffer[100];
+            int i = 0, start_col = coluna++;
+            buffer[i++] = '"';
+            while ((c = fgetc(arquivo)) != '"' && c != EOF) {
+                buffer[i++] = c; coluna++;
             }
-            coluna += j;
-            continue;
+            buffer[i++] = '"';
+            buffer[i] = '\0';
+            adicionar_token(linha, start_col, "STRING", buffer);
         }
-
-        if (codigo[i] == '\'' && isprint(codigo[i + 1]) && codigo[i + 2] == '\'') {
-            char buffer[4] = {codigo[i], codigo[i + 1], codigo[i + 2], '\0'};
-            adicionar_token("CHAR", buffer, linha, coluna);
-            i += 3;
-            coluna += 3;
-            continue;
-        }
-
-        if (codigo[i] == '"') {
-            char buffer[100];
-            int j = 0;
-            buffer[j++] = codigo[i++];
-            while (codigo[i] != '"' && codigo[i] != '\0') buffer[j++] = codigo[i++];
-            if (codigo[i] == '"') buffer[j++] = codigo[i++];
-            buffer[j] = '\0';
-            adicionar_token("STRING", buffer, linha, coluna);
-            coluna += j;
-            continue;
-        }
-
-        // operadores compostos
-        if ((codigo[i] == '=' && codigo[i + 1] == '=') ||
-            (codigo[i] == '!' && codigo[i + 1] == '=') ||
-            (codigo[i] == '<' && codigo[i + 1] == '=') ||
-            (codigo[i] == '>' && codigo[i + 1] == '=') ||
-            (codigo[i] == '&' && codigo[i + 1] == '&') ||
-            (codigo[i] == '|' && codigo[i + 1] == '|')) {
-            char op[3] = {codigo[i], codigo[i + 1], '\0'};
-            adicionar_token("OPERADOR", op, linha, coluna);
-            i += 2;
-            coluna += 2;
-            continue;
-        }
-
-        // operadores simples
-        if (strchr("+-*/=<>!&|", codigo[i])) {
-            char op[2] = {codigo[i], '\0'};
-            adicionar_token("OPERADOR", op, linha, coluna);
-            i++;
+        else if (strchr("(){};,", c)) {
+            char str[2] = {c, '\0'};
+            adicionar_token(linha, coluna, "DELIMITADOR", str);
             coluna++;
-            continue;
         }
-
-        // delimitadores
-        if (strchr("(){}[];,", codigo[i])) {
-            char d[2] = {codigo[i], '\0'};
-            adicionar_token("DELIMITADOR", d, linha, coluna);
-            i++;
+        else if (strchr("+-*/%=!<>", c)) {
+            char str[3] = {c, '\0'};
+            int next = fgetc(arquivo);
+            if (next == '=' || (c == '+' && next == '+') || (c == '-' && next == '-')) {
+                str[1] = next; str[2] = '\0'; coluna++;
+            } else ungetc(next, arquivo);
+            adicionar_token(linha, coluna, "OPERADOR", str);
             coluna++;
-            continue;
         }
-
-        // caractere desconhecido
-        char erro[2] = {codigo[i], '\0'};
-        adicionar_token("ERRO", erro, linha, coluna);
-        i++;
-        coluna++;
+        else {
+            char str[2] = {c, '\0'};
+            adicionar_token(linha, coluna, "ERRO", str);
+            coluna++;
+        }
     }
 
-    // imprimir tokens
-    for (int t = 0; t < num_tokens; t++) {
-        printf("l%d.c%d %s: %s\n", tokens[t].linha, tokens[t].coluna, tokens[t].tipo, tokens[t].valor);
-    }
+    fclose(arquivo);
 }
