@@ -183,24 +183,32 @@ NoSintatico *parse_expressao() {
 NoSintatico *parse_comando() {
     if (token_atual_e("PALAVRA-CHAVE", "int") || token_atual_e("PALAVRA-CHAVE", "float") || token_atual_e("PALAVRA-CHAVE", "char")) {
         NoSintatico *no = criar_no("DECLARACAO", tokens[pos].valor);
-        consumir_token(); // tipo
-
-        if (!token_atual_e("IDENTIFICADOR", NULL))
-            erro_sintatico("IDENTIFICADOR");
-        adicionar_filho(no, criar_no("Nome", tokens[pos].valor));
         consumir_token();
 
-        while (token_atual_e("DELIMITADOR", ",")) {
-            consumir_token();
+        while (1) {
+            NoSintatico *expr = criar_no("EXPR", "");
+
             if (!token_atual_e("IDENTIFICADOR", NULL))
                 erro_sintatico("IDENTIFICADOR");
-            adicionar_filho(no, criar_no("Nome", tokens[pos].valor));
+            adicionar_filho(expr, criar_no("IDENTIFICADOR", tokens[pos].valor));
             consumir_token();
-        }
 
-        if (token_atual_e("OPERADOR", "=")) {
-            consumir_token();
-            adicionar_filho(no, parse_expressao());
+            if (token_atual_e("OPERADOR", "=")) {
+                consumir_token();
+                if (!token_atual_e("NÚMERO", NULL))
+                    erro_sintatico("NÚMERO");
+                adicionar_filho(expr, criar_no("OPERADOR", "="));
+                adicionar_filho(expr, criar_no("NÚMERO", tokens[pos].valor));
+                consumir_token();
+            }
+
+            adicionar_filho(no, expr);
+
+            if (token_atual_e("DELIMITADOR", ",")) {
+                consumir_token();
+                continue;
+            }
+            break;
         }
 
         if (!token_atual_e("DELIMITADOR", ";"))
@@ -228,6 +236,7 @@ NoSintatico *parse_comando() {
     consumir_token();
     return no;
 }
+
 
 NoSintatico *parse_funcao() {
     NoSintatico *no = criar_no("FUNCAO", "");
