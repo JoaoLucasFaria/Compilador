@@ -14,6 +14,6 @@ extern Simbolo tabela[1000];
 extern int num_simbolos;
 extern int escopo_atual;
 
-void analisar_semantico(NoSintatico *no);
+int analisar_semantico(NoSintatico *no);
 
 #endif

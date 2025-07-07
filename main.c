@@ -31,9 +31,8 @@ int main(int argc, char *argv[]) {
     if (opcao == 2 || opcao == 3) {
         printf("\n== Arvore Sintatica ==\n\n");
         NoSintatico *raiz = analisar_sintatico();
-        analisar_semantico(raiz);
-        gerar_codigo_mips(raiz, "saida_mips.asm");
-
+        int pass = analisar_semantico(raiz);
+        if(pass) gerar_codigo_mips(raiz, "saida_mips.asm");
     }
 
     return 0;

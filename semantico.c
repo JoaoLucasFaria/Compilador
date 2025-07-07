@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "semantico.h"
 
 Simbolo tabela[1000];
@@ -10,7 +11,7 @@ void inserir_simbolo(const char *nome, const char *tipo) {
     for (int i = 0; i < num_simbolos; i++) {
         if (strcmp(tabela[i].nome, nome) == 0 && tabela[i].escopo == escopo_atual) {
             printf("ERRO SEMÂNTICO: variável '%s' já declarada no mesmo escopo.\n", nome);
-            return;
+            exit(0);
         }
     }
     strcpy(tabela[num_simbolos].nome, nome);
@@ -98,7 +99,8 @@ void analisar_semantico_rec(NoSintatico *no) {
     }
 }
 
-void analisar_semantico(NoSintatico *no) {
+int analisar_semantico(NoSintatico *no) {
+    int pass;
     printf("\n== Análise Semântica ==\n\n");
     analisar_semantico_rec(no);
 
@@ -106,6 +108,9 @@ void analisar_semantico(NoSintatico *no) {
     for (int i = 0; i < num_simbolos; i++) {
         if (!tabela[i].usada) {
             printf("AVISO SEMÂNTICO: variável '%s' declarada mas não utilizada.\n", tabela[i].nome);
+            pass = 1;
         }
+        if (pass) return 0;
+        else return 1;
     }
 }

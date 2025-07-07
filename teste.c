@@ -1,15 +1,11 @@
 #include <stdio.h>
 int main()
 {
-    int a = 10, c = 20;
-    if (a == 10)
+    int x = 5;
+    int x = 10;
+    if (x)
     {
-        printf("Hello World");
-    }
-
-    for (int i = 0; i < c; i++)
-    {
-        printf("%d", a);
+        printf("ok");
     }
     return 0;
 }
