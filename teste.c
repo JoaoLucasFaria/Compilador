@@ -2,7 +2,6 @@
 int main()
 {
     int a = 10, c = 20;
-    float b = 2.5;
     if (a == 10)
     {
         printf("Hello World");

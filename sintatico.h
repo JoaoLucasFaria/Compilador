@@ -13,6 +13,6 @@ typedef struct NoSintatico {
 NoSintatico *criar_no(const char *tipo, const char *valor);
 void adicionar_filho(NoSintatico *pai, NoSintatico *filho);
 void imprimir_arvore(NoSintatico *no, int nivel);
-void analisar_sintatico();
+NoSintatico *analisar_sintatico();
 
 #endif

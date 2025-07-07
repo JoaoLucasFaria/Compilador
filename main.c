@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include "lexico.h"
 #include "sintatico.h"
+#include "semantico.h"
+#include "gerador.h"
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
@@ -27,8 +29,11 @@ int main(int argc, char *argv[]) {
     }
 
     if (opcao == 2 || opcao == 3) {
-        printf("\n== \u00c1rvore Sint\u00e1tica ==\n\n");
-        analisar_sintatico();
+        printf("\n== Arvore Sintatica ==\n\n");
+        NoSintatico *raiz = analisar_sintatico();
+        analisar_semantico(raiz);
+        gerar_codigo_mips(raiz, "saida_mips.asm");
+
     }
 
     return 0;
