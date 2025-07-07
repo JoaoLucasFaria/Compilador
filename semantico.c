@@ -108,9 +108,8 @@ int analisar_semantico(NoSintatico *no) {
     for (int i = 0; i < num_simbolos; i++) {
         if (!tabela[i].usada) {
             printf("AVISO SEMÂNTICO: variável '%s' declarada mas não utilizada.\n", tabela[i].nome);
-            pass = 1;
+            return 0;
         }
-        if (pass) return 0;
-        else return 1;
+    return 1;
     }
 }
