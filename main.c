@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
         printf("\n== Arvore Sintatica ==\n\n");
         NoSintatico *raiz = analisar_sintatico();
         int pass = analisar_semantico(raiz);
-        if(pass) gerar_codigo_mips(raiz, "saida_mips.asm");
+        if(pass) gerar_codigo(raiz, "saida_mips.asm");
     }
 
     return 0;

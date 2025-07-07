@@ -3,6 +3,6 @@
 
 #include "sintatico.h"
 
-void gerar_codigo_mips(NoSintatico *raiz, const char *arquivo_saida);
+void gerar_codigo(NoSintatico *raiz, const char *arquivo_saida);
 
 #endif
